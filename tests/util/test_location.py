@@ -13,6 +13,8 @@ from tests.common import load_fixture
 COORDINATES_PARIS = (48.864716, 2.349014)
 # New York
 COORDINATES_NEW_YORK = (40.730610, -73.935242)
+# Rio
+COORDINATES_RIO_DE_JANEIRO = (-22.908333, -43.196388)
 
 # Results for the assertion (vincenty algorithm):
 #      Distance [km]   Distance [miles]
@@ -23,6 +25,7 @@ COORDINATES_NEW_YORK = (40.730610, -73.935242)
 # [1]: https://www.wolframalpha.com/input/?i=from+paris+to+new+york
 DISTANCE_KM = 5846.39
 DISTANCE_MILES = 3632.78
+DISTANCE_KM_R_TO_P = 9145.059
 
 
 @pytest.fixture
@@ -35,6 +38,42 @@ async def session(hass):
 async def raising_session(event_loop):
     """Return an aioclient session that only fails."""
     return Mock(get=Mock(side_effect=aiohttp.ClientError))
+
+
+def test_get_distance_none_lat():
+    """Test result if none latitude."""
+    meters = location_util.distance(
+        None,
+        COORDINATES_RIO_DE_JANEIRO[1],
+        COORDINATES_NEW_YORK[0],
+        COORDINATES_NEW_YORK[1],
+    )
+
+    assert meters is None
+
+
+def test_get_distance_none_lon():
+    """Test result if none longitude."""
+    meters = location_util.distance(
+        COORDINATES_RIO_DE_JANEIRO[0],
+        None,
+        COORDINATES_NEW_YORK[0],
+        COORDINATES_NEW_YORK[1],
+    )
+
+    assert meters is None
+
+
+def test_get_distance_from_south_to_north_country():
+    """Test result between south country to north country."""
+    meters = location_util.distance(
+        COORDINATES_RIO_DE_JANEIRO[0],
+        COORDINATES_RIO_DE_JANEIRO[1],
+        COORDINATES_PARIS[0],
+        COORDINATES_PARIS[1],
+    )
+
+    assert meters / 1000 - DISTANCE_KM_R_TO_P < 0.01
 
 
 def test_get_distance_to_same_place():
